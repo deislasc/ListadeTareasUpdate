@@ -1,0 +1,118 @@
+/* public/css/styles.css */
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f9;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 80%;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #444;
+}
+
+form {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  flex: 1 1 30%;
+  display: flex;
+  flex-direction: column;
+  margin-right: 15px; /* Aumentar el margen derecho */
+  margin-bottom: 20px; /* Add margin-bottom for spacing */
+}
+
+.form-group label {
+  margin-bottom: 15px;
+  font-weight: bold;
+  text-align: center; /* Center align the label */
+}
+
+form input[type="text"],
+form input[type="date"] {
+  width: 90%; /* Adjust the width to 90% */
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.form-group.date-group input[type="date"] {
+  width: 60%; /* Reduce the width for date inputs */
+}
+
+form button {
+  padding: 10px 15px;
+  border: none;
+  background-color: #28a745;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  align-self: flex-start; /* Align the button to the start */
+  margin-top: 34px; /* Added margin for better spacing */
+}
+
+form button:hover {
+  background-color: #218838;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate; /* Separate borders */
+  border-spacing: 10px; /* Add spacing between cells */
+  margin-top: 20px;
+}
+
+table th,
+table td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+table th {
+  background-color: #f4f4f9;
+}
+
+.complete-btn,
+.delete-btn {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 0 auto;
+  margin-top: 20px;
+}
+
+.complete-btn {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.complete-btn:hover {
+  background-color: #0056b3;
+}
+
+.delete-btn {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.delete-btn:hover {
+  background-color: #c82333;
+}
