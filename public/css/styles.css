@@ -133,3 +133,8 @@ table th {
   background: #007bff;
   margin-top: 36px;
 }
+
+.btn.btn-success {
+  background-color: transparent;
+  border-color: transparent;
+}
