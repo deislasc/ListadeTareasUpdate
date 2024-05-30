@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const moment = require ('moment')
+const moment = require('moment');
 
 const app = express();
 
@@ -13,7 +13,6 @@ const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost/todolist';
 mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('Conectado a MongoDB'))
   .catch(err => console.error('No se pudo conectar a MongoDB', err));
-
 
 // Configurar middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -28,7 +27,6 @@ app.get('/', async (req, res) => {
   const tasks = await Task.find();
   res.render('index', { tasks });
 });
-
 
 // Crear tarea
 app.post('/api/tasks/new', async (req, res) => {
@@ -52,13 +50,12 @@ app.post('/api/tasks/new', async (req, res) => {
   try {
     await task.save();
     console.log('Tarea creada correctamente'); // Agregar mensaje de éxito
-    res.status(201).json({ message: 'Tarea creada correctamente' }); // Devolver respuesta con mensaje
+    res.status(201).json({ message: 'Tarea creada correctamente', task }); // Devolver respuesta con la tarea creada
   } catch (error) {
     console.error('Error al guardar la tarea:', error);
     res.status(500).json({ error: 'Error interno del servidor al guardar la tarea' });
   }
 });
-
 
 // Actualizar tarea (marcar como completada)
 app.post('/api/tasks/:id/complete', async (req, res) => {
@@ -111,6 +108,7 @@ app.get('/api/tasks/:id', async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+
 
 // Definir el puerto
 const port = 3000;

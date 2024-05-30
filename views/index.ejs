@@ -9,7 +9,7 @@
 <body>
   <div class="container">
     <h1>Listado de Tareas</h1>
-    <form action="/api/tasks/new" method="POST">
+    <form id="newTaskForm">
       <div class="form-group">
         <label for="taskName">Nueva Tarea</label>
         <input type="text" id="taskName" name="name" placeholder="Escribe una nueva tarea" required>
@@ -24,6 +24,7 @@
       </div>
       <button type="submit">Agregar</button>
     </form>
+
     <table>
       <thead>
         <tr>
@@ -34,21 +35,21 @@
           <th>Eliminar</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="tasksTableBody">
         <% tasks.forEach(task => { %>
-          <tr>
+          <tr id="task-<%= task._id %>">
             <td><%= task.name %></td>
             <td><%= new Date(task.startDate).toLocaleDateString() %></td>
             <td><%= new Date(task.endDate).toLocaleDateString() %></td>
             <td class="centered-cell">
               <!-- Formulario para marcar una tarea como completada -->
-              <form class="inline-form" action="/api/tasks/<%= task._id %>/complete" method="POST">
+              <form class="inline-form complete-form" data-id="<%= task._id %>">
                 <button class="complete-btn" type="submit"><%= task.completed ? "✔" : "❌" %></button>
               </form>
             </td>
             <td class="centered-cell">
               <!-- Formulario para eliminar una tarea -->
-              <form class="inline-form" action="/api/tasks/<%= task._id %>/delete" method="POST">
+              <form class="inline-form delete-form" data-id="<%= task._id %>">
                 <button class="delete-btn" type="submit">Eliminar</button>
               </form>
             </td>
@@ -60,21 +61,89 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
     $(document).ready(function() {
-      // Enviar solicitud para marcar una tarea como completada
-      $('form.inline-form[action*="complete"]').on('submit', function(event) {
+      // Enviar solicitud para agregar una nueva tarea
+      $('#newTaskForm').on('submit', function(event) {
         event.preventDefault();
-        $.post($(this).attr('action'), $(this).serialize(), function() {
-          location.reload();
+        const formData = {
+          name: $('#taskName').val(),
+          startDate: $('#startDate').val(),
+          endDate: $('#endDate').val()
+        };
+
+        $.ajax({
+          type: 'POST',
+          url: '/api/tasks/new',
+          data: JSON.stringify(formData),
+          contentType: 'application/json',
+          success: function(response) {
+            // Recargar la lista de tareas sin recargar la página
+            loadTasks();
+            // Limpiar el formulario
+            $('#newTaskForm')[0].reset();
+          },
+          error: function(error) {
+            console.error('Error al agregar la tarea:', error);
+          }
+        });
+      });
+
+      // Enviar solicitud para marcar una tarea como completada
+      $(document).on('submit', 'form.complete-form', function(event) {
+        event.preventDefault();
+        const taskId = $(this).data('id');
+
+        $.post(`/api/tasks/${taskId}/complete`, function() {
+          loadTasks();
         });
       });
 
       // Enviar solicitud para eliminar una tarea
-      $('form.inline-form[action*="delete"]').on('submit', function(event) {
+      $(document).on('submit', 'form.delete-form', function(event) {
         event.preventDefault();
-        $.post($(this).attr('action'), $(this).serialize(), function() {
-          location.reload();
+        const taskId = $(this).data('id');
+
+        $.ajax({
+          type: 'POST',
+          url: `/api/tasks/${taskId}/delete`,
+          success: function(response) {
+            // Remover la fila de la tarea eliminada sin recargar la página
+            $(`#task-${taskId}`).remove();
+          },
+          error: function(error) {
+            console.error('Error al eliminar la tarea:', error);
+          }
         });
       });
+
+      // Función para cargar y renderizar las tareas
+      function loadTasks() {
+        $.get('/api/tasks', function(tasks) {
+          const tasksTableBody = $('#tasksTableBody');
+          tasksTableBody.empty();
+          tasks.forEach(task => {
+            tasksTableBody.append(`
+              <tr id="task-${task._id}">
+                <td>${task.name}</td>
+                <td>${new Date(task.startDate).toLocaleDateString()}</td>
+                <td>${new Date(task.endDate).toLocaleDateString()}</td>
+                <td class="centered-cell">
+                  <form class="inline-form complete-form" data-id="${task._id}">
+                    <button class="complete-btn" type="submit">${task.completed ? "✔" : "❌"}</button>
+                  </form>
+                </td>
+                <td class="centered-cell">
+                  <form class="inline-form delete-form" data-id="${task._id}">
+                    <button class="delete-btn" type="submit">Eliminar</button>
+                  </form>
+                </td>
+              </tr>
+            `);
+          });
+        });
+      }
+
+      // Inicialmente cargar y renderizar las tareas
+      loadTasks();
     });
   </script>
 </body>
