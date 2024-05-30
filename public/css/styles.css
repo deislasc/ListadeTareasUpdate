@@ -116,3 +116,20 @@ table th {
 .delete-btn:hover {
   background-color: #c82333;
 }
+
+.modal-lg {
+  max-width: 50%; /* Ajustar el ancho del modal al 50% del ancho de la pantalla */
+}
+
+.modal-body .form-group {
+  margin-bottom: 1.5rem; /* Añadir margen inferior para espaciar los elementos del formulario */
+}
+
+.modal-body .form-control {
+  width: 100%; /* Asegurar que los campos del formulario ocupen todo el ancho disponible */
+}
+
+.btn.btn-submit {
+  background: #007bff;
+  margin-top: 36px;
+}

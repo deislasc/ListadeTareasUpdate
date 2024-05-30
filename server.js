@@ -109,6 +109,35 @@ app.get('/api/tasks/:id', async (req, res) => {
   }
 });
 
+// Editar tarea
+app.put('/api/tasks/:id', async (req, res) => {
+  // Validar las fechas antes de guardarlas en la base de datos
+  const startDate = moment(req.body.startDate);
+  const endDate = moment(req.body.endDate);
+
+  if (!startDate.isValid() || !endDate.isValid()) {
+    return res.status(400).json({ error: 'Formato de fecha inválido' });
+  }
+
+  try {
+    const task = await Task.findByIdAndUpdate(req.params.id, {
+      name: req.body.name,
+      startDate: startDate.toDate(),
+      endDate: endDate.toDate()
+    }, { new: true });
+
+    if (!task) {
+      return res.status(404).json({ error: 'Tarea no encontrada' });
+    }
+
+    res.json(task);
+  } catch (error) {
+    console.error('Error al actualizar la tarea:', error);
+    res.status(500).json({ error: 'Error interno del servidor al actualizar la tarea' });
+  }
+});
+
+
 
 // Definir el puerto
 const port = 3000;

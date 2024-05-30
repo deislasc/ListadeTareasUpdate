@@ -4,35 +4,65 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Todo List</title>
-  <link rel="stylesheet" href="/css/styles.css"> <!-- Ruta corregida -->
+  <link rel="stylesheet" href="/css/styles.css">
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* Estilos personalizados para el modal */
+    .modal-lg {
+      max-width: 50%; /* Ajustar el ancho del modal al 50% del ancho de la pantalla */
+    }
+
+    .modal-body .form-group {
+      margin-bottom: 1.5rem; /* Añadir margen inferior para espaciar los elementos del formulario */
+    }
+
+    .modal-body .form-control {
+      width: 100%; /* Asegurar que los campos del formulario ocupen todo el ancho disponible */
+    }
+
+    /* Centrar contenido en las celdas de la tabla */
+    .centered-cell {
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    /* Alinear los botones dentro de las celdas */
+    .btn {
+      margin: 0 auto;
+      display: block;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
+  <div class="container mt-5">
     <h1>Listado de Tareas</h1>
-    <form id="newTaskForm">
+    <form id="newTaskForm" class="mb-4">
       <div class="form-group">
         <label for="taskName">Nueva Tarea</label>
-        <input type="text" id="taskName" name="name" placeholder="Escribe una nueva tarea" required>
+        <input type="text" id="taskName" name="name" class="form-control" placeholder="Escribe una nueva tarea" required>
       </div>
       <div class="form-group">
         <label for="startDate">Fecha de Inicio</label>
-        <input type="date" id="startDate" name="startDate" required>
+        <input type="date" id="startDate" name="startDate" class="form-control" required>
       </div>
       <div class="form-group">
         <label for="endDate">Fecha de Fin</label>
-        <input type="date" id="endDate" name="endDate" required>
+        <input type="date" id="endDate" name="endDate" class="form-control" required>
       </div>
-      <button type="submit">Agregar</button>
+      <button type="submit" class="btn btn-submit">Agregar</button>
     </form>
 
-    <table>
+    <div id="alert" class="alert" style="display: none;"></div>
+
+    <table class="table table-bordered">
       <thead>
         <tr>
           <th>Nombre de Tarea</th>
           <th>Fecha de Inicio</th>
           <th>Fecha de Fin</th>
-          <th>Finalizar</th>
-          <th>Eliminar</th>
+          <th class="centered-cell">Finalizar</th>
+          <th class="centered-cell">Editar</th>
+          <th class="centered-cell">Eliminar</th>
         </tr>
       </thead>
       <tbody id="tasksTableBody">
@@ -42,15 +72,16 @@
             <td><%= new Date(task.startDate).toLocaleDateString() %></td>
             <td><%= new Date(task.endDate).toLocaleDateString() %></td>
             <td class="centered-cell">
-              <!-- Formulario para marcar una tarea como completada -->
               <form class="inline-form complete-form" data-id="<%= task._id %>">
-                <button class="complete-btn" type="submit"><%= task.completed ? "✔" : "❌" %></button>
+                <button class="btn btn-success" type="submit"><%= task.completed ? "✔" : "❌" %></button>
               </form>
             </td>
             <td class="centered-cell">
-              <!-- Formulario para eliminar una tarea -->
+              <button class="btn btn-warning edit-btn" data-id="<%= task._id %>" data-name="<%= task.name %>" data-startdate="<%= task.startDate %>" data-enddate="<%= task.endDate %>">Editar</button>
+            </td>
+            <td class="centered-cell">
               <form class="inline-form delete-form" data-id="<%= task._id %>">
-                <button class="delete-btn" type="submit">Eliminar</button>
+                <button class="btn btn-danger" type="submit">Eliminar</button>
               </form>
             </td>
           </tr>
@@ -58,9 +89,55 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Modal para editar tarea -->
+  <div class="modal fade" id="editTaskModal" tabindex="-1" role="dialog" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editTaskModalLabel">Editar Tarea</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="editTaskForm">
+            <input type="hidden" id="editTaskId">
+            <div class="form-group">
+              <label for="editTaskName">Nombre de Tarea</label>
+              <input type="text" id="editTaskName" name="name" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="editStartDate">Fecha de Inicio</label>
+              <input type="date" id="editStartDate" name="startDate" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="editEndDate">Fecha de Fin</label>
+              <input type="date" id="editEndDate" name="endDate" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <script>
     $(document).ready(function() {
+      // Función para mostrar alertas
+      function showAlert(message, type) {
+        const alertBox = $('#alert');
+        alertBox.text(message);
+        alertBox.removeClass();
+        alertBox.addClass(`alert alert-${type}`);
+        alertBox.show();
+        setTimeout(() => {
+          alertBox.hide();
+        }, 3000);
+      }
+
       // Enviar solicitud para agregar una nueva tarea
       $('#newTaskForm').on('submit', function(event) {
         event.preventDefault();
@@ -76,13 +153,53 @@
           data: JSON.stringify(formData),
           contentType: 'application/json',
           success: function(response) {
-            // Recargar la lista de tareas sin recargar la página
             loadTasks();
-            // Limpiar el formulario
             $('#newTaskForm')[0].reset();
+            showAlert('Tarea agregada exitosamente', 'success');
           },
           error: function(error) {
-            console.error('Error al agregar la tarea:', error);
+            showAlert('Error al agregar la tarea', 'danger');
+          }
+        });
+      });
+
+      // Mostrar el modal de edición con los datos de la tarea
+      $(document).on('click', '.edit-btn', function() {
+        const taskId = $(this).data('id');
+        const taskName = $(this).data('name');
+        const startDate = $(this).data('startdate').slice(0, 10); // Remover la parte de tiempo
+        const endDate = $(this).data('enddate').slice(0, 10); // Remover la parte de tiempo
+
+        $('#editTaskId').val(taskId);
+        $('#editTaskName').val(taskName);
+        $('#editStartDate').val(startDate);
+        $('#editEndDate').val(endDate);
+
+        $('#editTaskModal').modal('show');
+      });
+
+      // Enviar solicitud para actualizar una tarea
+      $('#editTaskForm').on('submit', function(event) {
+        event.preventDefault();
+        const taskId = $('#editTaskId').val();
+        const formData = {
+          name: $('#editTaskName').val(),
+          startDate: $('#editStartDate').val(),
+          endDate: $('#editEndDate').val()
+        };
+
+        $.ajax({
+          type: 'PUT',
+          url: `/api/tasks/${taskId}`,
+          data: JSON.stringify(formData),
+          contentType: 'application/json',
+          success: function(response) {
+            $('#editTaskModal').modal('hide');
+            loadTasks();
+            showAlert('Tarea actualizada exitosamente', 'success');
+          },
+          error: function(error) {
+            showAlert('Error al actualizar la tarea', 'danger');
           }
         });
       });
@@ -106,11 +223,11 @@
           type: 'POST',
           url: `/api/tasks/${taskId}/delete`,
           success: function(response) {
-            // Remover la fila de la tarea eliminada sin recargar la página
             $(`#task-${taskId}`).remove();
+            showAlert('Tarea eliminada exitosamente', 'success');
           },
           error: function(error) {
-            console.error('Error al eliminar la tarea:', error);
+            showAlert('Error al eliminar la tarea', 'danger');
           }
         });
       });
@@ -128,12 +245,15 @@
                 <td>${new Date(task.endDate).toLocaleDateString()}</td>
                 <td class="centered-cell">
                   <form class="inline-form complete-form" data-id="${task._id}">
-                    <button class="complete-btn" type="submit">${task.completed ? "✔" : "❌"}</button>
+                    <button class="btn btn-success" type="submit">${task.completed ? "✔" : "❌"}</button>
                   </form>
                 </td>
                 <td class="centered-cell">
+                  <button class="btn btn-warning edit-btn" data-id="${task._id}" data-name="${task.name}" data-startdate="${task.startDate}" data-enddate="${task.endDate}">Editar</button>
+                </td>
+                <td class="centered-cell">
                   <form class="inline-form delete-form" data-id="${task._id}">
-                    <button class="delete-btn" type="submit">Eliminar</button>
+                    <button class="btn btn-danger" type="submit">Eliminar</button>
                   </form>
                 </td>
               </tr>
