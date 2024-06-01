@@ -54,6 +54,11 @@
 
     <div id="alert" class="alert" style="display: none;"></div>
 
+    <div class="form-group">
+      <input type="text" id="searchTask" class="form-control" placeholder="Buscar tarea">
+    </div>
+    <button id="clearSearch" class="btn btn-secondary mb-4">Limpiar Búsqueda</button>
+
     <table class="table table-bordered">
       <thead>
         <tr>
@@ -90,7 +95,7 @@
     </table>
   </div>
 
-  <!-- Modal para editar tarea -->
+  <!-- Modal de Edición -->
   <div class="modal fade" id="editTaskModal" tabindex="-1" role="dialog" aria-labelledby="editTaskModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
       <div class="modal-content">
@@ -105,15 +110,15 @@
             <input type="hidden" id="editTaskId">
             <div class="form-group">
               <label for="editTaskName">Nombre de Tarea</label>
-              <input type="text" id="editTaskName" name="name" class="form-control" required>
+              <input type="text" id="editTaskName" class="form-control" required>
             </div>
             <div class="form-group">
               <label for="editStartDate">Fecha de Inicio</label>
-              <input type="date" id="editStartDate" name="startDate" class="form-control" required>
+              <input type="date" id="editStartDate" class="form-control" required>
             </div>
             <div class="form-group">
               <label for="editEndDate">Fecha de Fin</label>
-              <input type="date" id="editEndDate" name="endDate" class="form-control" required>
+              <input type="date" id="editEndDate" class="form-control" required>
             </div>
             <button type="submit" class="btn btn-primary">Guardar Cambios</button>
           </form>
@@ -122,123 +127,34 @@
     </div>
   </div>
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <script>
-    $(document).ready(function() {
+    document.addEventListener('DOMContentLoaded', () => {
       // Función para mostrar alertas
       function showAlert(message, type) {
-        const alertBox = $('#alert');
-        alertBox.text(message);
-        alertBox.removeClass();
-        alertBox.addClass(`alert alert-${type}`);
-        alertBox.show();
+        const alertBox = document.getElementById('alert');
+        alertBox.textContent = message;
+        alertBox.className = `alert alert-${type}`;
+        alertBox.style.display = 'block';
         setTimeout(() => {
-          alertBox.hide();
+          alertBox.style.display = 'none';
         }, 3000);
       }
 
-      // Enviar solicitud para agregar una nueva tarea
-      $('#newTaskForm').on('submit', function(event) {
-        event.preventDefault();
-        const formData = {
-          name: $('#taskName').val(),
-          startDate: $('#startDate').val(),
-          endDate: $('#endDate').val()
-        };
+      // Cargar y renderizar las tareas
+      async function loadTasks(searchTerm = '') {
+        try {
+          const response = await fetch('/api/tasks');
+          const tasks = await response.json();
+          const tasksTableBody = document.getElementById('tasksTableBody');
+          tasksTableBody.innerHTML = '';
 
-        $.ajax({
-          type: 'POST',
-          url: '/api/tasks/new',
-          data: JSON.stringify(formData),
-          contentType: 'application/json',
-          success: function(response) {
-            loadTasks();
-            $('#newTaskForm')[0].reset();
-            showAlert('Tarea agregada exitosamente', 'success');
-          },
-          error: function(error) {
-            showAlert('Error al agregar la tarea', 'danger');
-          }
-        });
-      });
+          const filteredTasks = tasks.filter(task => task.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      // Mostrar el modal de edición con los datos de la tarea
-      $(document).on('click', '.edit-btn', function() {
-        const taskId = $(this).data('id');
-        const taskName = $(this).data('name');
-        const startDate = $(this).data('startdate').slice(0, 10); // Remover la parte de tiempo
-        const endDate = $(this).data('enddate').slice(0, 10); // Remover la parte de tiempo
-
-        $('#editTaskId').val(taskId);
-        $('#editTaskName').val(taskName);
-        $('#editStartDate').val(startDate);
-        $('#editEndDate').val(endDate);
-
-        $('#editTaskModal').modal('show');
-      });
-
-      // Enviar solicitud para actualizar una tarea
-      $('#editTaskForm').on('submit', function(event) {
-        event.preventDefault();
-        const taskId = $('#editTaskId').val();
-        const formData = {
-          name: $('#editTaskName').val(),
-          startDate: $('#editStartDate').val(),
-          endDate: $('#editEndDate').val()
-        };
-
-        $.ajax({
-          type: 'PUT',
-          url: `/api/tasks/${taskId}`,
-          data: JSON.stringify(formData),
-          contentType: 'application/json',
-          success: function(response) {
-            $('#editTaskModal').modal('hide');
-            loadTasks();
-            showAlert('Tarea actualizada exitosamente', 'success');
-          },
-          error: function(error) {
-            showAlert('Error al actualizar la tarea', 'danger');
-          }
-        });
-      });
-
-      // Enviar solicitud para marcar una tarea como completada
-      $(document).on('submit', 'form.complete-form', function(event) {
-        event.preventDefault();
-        const taskId = $(this).data('id');
-
-        $.post(`/api/tasks/${taskId}/complete`, function() {
-          loadTasks();
-        });
-      });
-
-      // Enviar solicitud para eliminar una tarea
-      $(document).on('submit', 'form.delete-form', function(event) {
-        event.preventDefault();
-        const taskId = $(this).data('id');
-
-        $.ajax({
-          type: 'POST',
-          url: `/api/tasks/${taskId}/delete`,
-          success: function(response) {
-            $(`#task-${taskId}`).remove();
-            showAlert('Tarea eliminada exitosamente', 'success');
-          },
-          error: function(error) {
-            showAlert('Error al eliminar la tarea', 'danger');
-          }
-        });
-      });
-
-      // Función para cargar y renderizar las tareas
-      function loadTasks() {
-        $.get('/api/tasks', function(tasks) {
-          const tasksTableBody = $('#tasksTableBody');
-          tasksTableBody.empty();
-          tasks.forEach(task => {
-            tasksTableBody.append(`
+          filteredTasks.forEach(task => {
+            tasksTableBody.insertAdjacentHTML('beforeend', `
               <tr id="task-${task._id}">
                 <td>${task.name}</td>
                 <td>${new Date(task.startDate).toLocaleDateString()}</td>
@@ -259,11 +175,133 @@
               </tr>
             `);
           });
-        });
+        } catch (error) {
+          showAlert('Error al cargar las tareas', 'danger');
+        }
       }
 
       // Inicialmente cargar y renderizar las tareas
       loadTasks();
+
+      // Manejar el evento de búsqueda
+      document.getElementById('searchTask').addEventListener('input', (event) => {
+        const searchTerm = event.target.value;
+        loadTasks(searchTerm);
+      });
+
+      // Manejar el evento de limpiar búsqueda
+      document.getElementById('clearSearch').addEventListener('click', () => {
+        document.getElementById('searchTask').value = '';
+        loadTasks();
+      });
+
+      // Enviar solicitud para agregar una nueva tarea
+      document.getElementById('newTaskForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = {
+          name: document.getElementById('taskName').value,
+          startDate: document.getElementById('startDate').value,
+          endDate: document.getElementById('endDate').value
+        };
+
+        try {
+          const response = await fetch('/api/tasks/new', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
+          if (response.ok) {
+            loadTasks();
+            document.getElementById('newTaskForm').reset();
+            showAlert('Tarea agregada exitosamente', 'success');
+          } else {
+            const errorData = await response.json();
+            showAlert(errorData.error || 'Error al agregar la tarea', 'danger');
+          }
+        } catch (error) {
+          showAlert('Error al agregar la tarea', 'danger');
+        }
+      });
+
+      // Mostrar el modal de edición con los datos de la tarea
+      document.addEventListener('click', (event) => {
+        if (event.target.classList.contains('edit-btn')) {
+          const taskId = event.target.getAttribute('data-id');
+          const taskName = event.target.getAttribute('data-name');
+          const startDate = event.target.getAttribute('data-startdate').slice(0, 10);
+          const endDate = event.target.getAttribute('data-enddate').slice(0, 10);
+
+          document.getElementById('editTaskId').value = taskId;
+          document.getElementById('editTaskName').value = taskName;
+          document.getElementById('editStartDate').value = startDate;
+          document.getElementById('editEndDate').value = endDate;
+
+          $('#editTaskModal').modal('show');
+        }
+      });
+
+      // Enviar solicitud para actualizar una tarea
+      document.getElementById('editTaskForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const taskId = document.getElementById('editTaskId').value;
+        const formData = {
+          name: document.getElementById('editTaskName').value,
+          startDate: document.getElementById('editStartDate').value,
+          endDate: document.getElementById('editEndDate').value
+        };
+
+        try {
+          const response = await fetch(`/api/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
+          if (response.ok) {
+            $('#editTaskModal').modal('hide');
+            loadTasks();
+            showAlert('Tarea actualizada exitosamente', 'success');
+          } else {
+            const errorData = await response.json();
+            showAlert(errorData.error || 'Error al actualizar la tarea', 'danger');
+          }
+        } catch (error) {
+          showAlert('Error al actualizar la tarea', 'danger');
+        }
+      });
+
+      // Enviar solicitud para marcar una tarea como completada
+      document.addEventListener('submit', async (event) => {
+        if (event.target.classList.contains('complete-form')) {
+          event.preventDefault();
+          const taskId = event.target.getAttribute('data-id');
+          try {
+            await fetch(`/api/tasks/${taskId}/complete`, { method: 'POST' });
+            loadTasks();
+          } catch (error) {
+            showAlert('Error al marcar la tarea como completada', 'danger');
+          }
+        }
+      });
+
+      // Enviar solicitud para eliminar una tarea
+      document.addEventListener('submit', async (event) => {
+        if (event.target.classList.contains('delete-form')) {
+          event.preventDefault();
+          const taskId = event.target.getAttribute('data-id');
+          try {
+            const response = await fetch(`/api/tasks/${taskId}/delete`, { method: 'POST' });
+            if (response.ok) {
+              document.getElementById(`task-${taskId}`).remove();
+              showAlert('Tarea eliminada exitosamente', 'success');
+            } else {
+              const errorData = await response.json();
+              showAlert(errorData.error || 'Error al eliminar la tarea', 'danger');
+            }
+          } catch (error) {
+            showAlert('Error al eliminar la tarea', 'danger');
+          }
+        }
+      });
     });
   </script>
 </body>

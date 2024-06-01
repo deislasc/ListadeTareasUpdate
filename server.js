@@ -137,8 +137,6 @@ app.put('/api/tasks/:id', async (req, res) => {
   }
 });
 
-
-
 // Definir el puerto
 const port = 3000;
 app.listen(port, () => console.log(`Servidor escuchando en el puerto ${port}`));
